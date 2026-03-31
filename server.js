@@ -15,6 +15,11 @@ const wss = new WebSocketServer({ server });
 // Sert les fichiers statiques du dossier /public
 app.use(express.static(path.join(__dirname, 'public')));
 
+// ─── Routes propres ───
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
+app.get('/timer', (req, res) => res.sendFile(path.join(__dirname, 'public', 'timer.html')));
+app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
+
 // ─── État du timer en mémoire ───
 let timerState = {
   status: 'idle',    // 'idle' | 'set' | 'running' | 'finished'
@@ -138,6 +143,7 @@ wss.on('connection', (ws) => {
 const PORT = 3000;
 server.listen(PORT, () => {
   console.log(`Serveur démarré sur http://localhost:${PORT}`);
-  console.log(`Timer : http://localhost:${PORT}/timer.html`);
-  console.log(`Admin  : http://localhost:${PORT}/admin.html`);
+  console.log(`Accueil : http://localhost:${PORT}/`);
+  console.log(`Timer   : http://localhost:${PORT}/timer`);
+  console.log(`Admin   : http://localhost:${PORT}/admin`);
 });

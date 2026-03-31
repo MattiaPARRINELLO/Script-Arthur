@@ -226,6 +226,31 @@
     }
     .glitch { animation: glitch 0.3s infinite; }
 
+    /* ─── BOUTON PLEIN ÉCRAN ─── */
+    #btn-fullscreen {
+      position: fixed;
+      top: 1rem; right: 1rem;
+      z-index: 300;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.15);
+      color: rgba(255,255,255,0.5);
+      font-family: inherit;
+      font-size: 1.4rem;
+      width: 44px; height: 44px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #btn-fullscreen:hover {
+      background: rgba(255,255,0,0.1);
+      border-color: #FFFF00;
+      color: #FFFF00;
+    }
+    #btn-fullscreen.hidden { display: none; }
+
     /* ─── DOTS ANIMÉS (IDLE) ─── */
     @keyframes dots {
       0%   { content: '.'; }
@@ -239,6 +264,9 @@
   </style>
 </head>
 <body>
+  <!-- Bouton plein écran -->
+  <button id="btn-fullscreen" title="Plein ecran">&#x26F6;</button>
+
   <!-- Effets visuels -->
   <div class="scanlines"></div>
   <div class="vignette"></div>
@@ -361,6 +389,22 @@
           break;
       }
     }
+
+    // ─── Plein écran ───
+    const btnFs = document.getElementById('btn-fullscreen');
+    btnFs.addEventListener('click', () => {
+      const el = document.documentElement;
+      if (!document.fullscreenElement) {
+        el.requestFullscreen().catch(() => {});
+        btnFs.classList.add('hidden');
+      }
+    });
+    // Ré-afficher le bouton si on quitte le plein écran
+    document.addEventListener('fullscreenchange', () => {
+      if (!document.fullscreenElement) {
+        btnFs.classList.remove('hidden');
+      }
+    });
 
     // ─── Connexion WebSocket avec reconnexion automatique ───
     let ws;

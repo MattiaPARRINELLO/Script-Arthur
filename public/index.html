@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Timer Scenique</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%; min-height: 100vh;
+      background: #0a0a0a;
+      font-family: 'Share Tech Mono', 'Courier New', monospace;
+      color: #ccc;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .page {
+      text-align: center;
+      padding: 2rem;
+    }
+
+    h1 {
+      font-size: clamp(1.4rem, 4vw, 2.2rem);
+      color: #FF0000;
+      letter-spacing: 0.3em;
+      margin-bottom: 0.3rem;
+    }
+    .subtitle {
+      font-size: 0.8rem;
+      color: #555;
+      letter-spacing: 0.15em;
+      margin-bottom: 3rem;
+    }
+
+    .cards {
+      display: flex;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    a.card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 240px;
+      height: 180px;
+      background: #111;
+      border: 1px solid #222;
+      border-radius: 10px;
+      text-decoration: none;
+      color: inherit;
+      transition: all 0.2s;
+    }
+    a.card:hover {
+      border-color: #FFFF00;
+      box-shadow: 0 0 25px rgba(255,255,0,0.1);
+      transform: translateY(-4px);
+    }
+
+    .card-icon {
+      font-size: 2.5rem;
+      margin-bottom: 0.8rem;
+    }
+    .card-title {
+      font-size: 1rem;
+      color: #FFFF00;
+      letter-spacing: 0.2em;
+      margin-bottom: 0.3rem;
+    }
+    .card-desc {
+      font-size: 0.7rem;
+      color: #666;
+      letter-spacing: 0.05em;
+    }
+
+    .card.timer-card:hover { border-color: #FFFF00; box-shadow: 0 0 25px rgba(255,255,0,0.15); }
+    .card.admin-card:hover { border-color: #FF0000; box-shadow: 0 0 25px rgba(255,0,0,0.15); }
+    .card.admin-card:hover .card-title { color: #FF0000; }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <h1>TIMER SCENIQUE</h1>
+    <div class="subtitle">Systeme de decompte temps reel</div>
+
+    <div class="cards">
+      <a href="/timer" class="card timer-card">
+        <div class="card-icon">&#9201;</div>
+        <div class="card-title">TIMER</div>
+        <div class="card-desc">Ecran acteur — plein ecran</div>
+      </a>
+
+      <a href="/admin" class="card admin-card">
+        <div class="card-icon">&#9881;</div>
+        <div class="card-title">REGIE</div>
+        <div class="card-desc">Interface de controle</div>
+      </a>
+    </div>
+  </div>
+</body>
+</html>
