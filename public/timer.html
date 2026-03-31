@@ -406,37 +406,22 @@
       }
     });
 
-    // ─── Connexion WebSocket avec reconnexion automatique ───
-    let ws;
-    function connect() {
-      const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-      ws = new WebSocket(`${protocol}//${location.host}/ws`);
-
-      ws.onopen = () => {
-        console.log('[WS] Connecté');
-      };
-
-      ws.onmessage = (event) => {
-        try {
-          const state = JSON.parse(event.data);
+    // ─── Polling HTTP toutes les secondes ───
+    async function poll() {
+      try {
+        const res = await fetch('/api/state');
+        if (res.ok) {
+          const state = await res.json();
           updateDisplay(state);
-        } catch (e) {
-          console.error('[WS] Message invalide', e);
         }
-      };
-
-      ws.onclose = () => {
-        console.log('[WS] Déconnecté — reconnexion dans 3s...');
-        setTimeout(connect, 3000);
-      };
-
-      ws.onerror = () => {
-        ws.close();
-      };
+      } catch (e) {
+        // Serveur injoignable, on réessaie au prochain tick
+      }
     }
 
-    // Lancement
-    connect();
+    // Premier appel immédiat puis toutes les secondes
+    poll();
+    setInterval(poll, 1000);
   </script>
 </body>
 </html>

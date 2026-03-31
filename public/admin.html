@@ -346,10 +346,20 @@
       });
     });
 
-    // ─── Envoi de messages au serveur ───
-    function send(obj) {
-      if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify(obj));
+    // ─── Envoi d'action au serveur ───
+    async function send(obj) {
+      try {
+        const res = await fetch('/api/action', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(obj)
+        });
+        if (res.ok) {
+          const state = await res.json();
+          updateUI(state);
+        }
+      } catch (e) {
+        // Serveur injoignable
       }
     }
 
@@ -370,39 +380,34 @@
       send({ action: 'reset' });
     });
 
-    // ─── Connexion WebSocket avec reconnexion automatique ───
-    let ws;
-    function connect() {
-      const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-      ws = new WebSocket(`${protocol}//${location.host}/ws`);
-
-      ws.onopen = () => {
-        wsBadge.textContent = 'CONNECTE';
-        wsBadge.className = 'badge connected';
-      };
-
-      ws.onmessage = (event) => {
-        try {
-          const state = JSON.parse(event.data);
+    // ─── Polling HTTP toutes les secondes ───
+    let connected = false;
+    async function poll() {
+      try {
+        const res = await fetch('/api/state');
+        if (res.ok) {
+          const state = await res.json();
           updateUI(state);
-        } catch (e) {
-          console.error('[WS] Message invalide', e);
+          if (!connected) {
+            connected = true;
+            wsBadge.textContent = 'CONNECTE';
+            wsBadge.className = 'badge connected';
+          }
+        } else {
+          throw new Error();
         }
-      };
-
-      ws.onclose = () => {
-        wsBadge.textContent = 'DECONNECTE';
-        wsBadge.className = 'badge disconnected';
-        setTimeout(connect, 3000);
-      };
-
-      ws.onerror = () => {
-        ws.close();
-      };
+      } catch (e) {
+        if (connected) {
+          connected = false;
+          wsBadge.textContent = 'DECONNECTE';
+          wsBadge.className = 'badge disconnected';
+        }
+      }
     }
 
-    // Lancement
-    connect();
+    // Premier appel immédiat puis toutes les secondes
+    poll();
+    setInterval(poll, 1000);
   </script>
 </body>
 </html>
