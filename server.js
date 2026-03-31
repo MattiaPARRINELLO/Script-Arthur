@@ -10,7 +10,7 @@ const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
-const wss = new WebSocketServer({ server });
+const wss = new WebSocketServer({ server, path: '/ws' });
 
 // Sert les fichiers statiques du dossier /public
 app.use(express.static(path.join(__dirname, 'public')));
@@ -71,8 +71,21 @@ function stopTick() {
   }
 }
 
+// ─── Ping/pong keepalive (évite la coupure par les proxies) ───
+const PING_INTERVAL = 25000; // 25s — sous le timeout de la plupart des proxies (30-60s)
+setInterval(() => {
+  wss.clients.forEach((client) => {
+    if (client.isAlive === false) return client.terminate();
+    client.isAlive = false;
+    client.ping();
+  });
+}, PING_INTERVAL);
+
 // ─── Gestion des connexions WebSocket ───
 wss.on('connection', (ws) => {
+  ws.isAlive = true;
+  ws.on('pong', () => { ws.isAlive = true; });
+
   console.log('[WS] Client connecté — total :', wss.clients.size);
 
   // Envoie l'état actuel au nouveau client (resynchronisation)

@@ -374,7 +374,7 @@
     let ws;
     function connect() {
       const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-      ws = new WebSocket(`${protocol}//${location.host}`);
+      ws = new WebSocket(`${protocol}//${location.host}/ws`);
 
       ws.onopen = () => {
         wsBadge.textContent = 'CONNECTE';
