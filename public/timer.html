@@ -350,8 +350,10 @@
           subtitleEl.textContent = '';
 
           const r = state.remaining;
-          const pct = state.duration > 0 ? (r / state.duration) * 100 : 0;
-          progressBar.style.width = pct + '%';
+          // La barre se base sur progressDuration (durée scène), sinon duration par défaut
+          const barRef = state.progressDuration > 0 ? state.progressDuration : state.duration;
+          const pct = barRef > 0 ? (r / barRef) * 100 : 0;
+          progressBar.style.width = Math.min(100, pct) + '%';
 
           if (r > 30) {
             // Zone normale — jaune

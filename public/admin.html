@@ -209,6 +209,25 @@
       <button class="btn btn-set" id="btn-set">&#9881; DEFINIR LE TEMPS</button>
     </div>
 
+    <!-- ─── [2b] DUREE BARRE DE PROGRESSION ─── -->
+    <div class="section">
+      <div class="section-title">Barre de progression (duree scene)</div>
+      <div style="font-size:0.7rem; color:#555; margin-bottom:0.6rem;">
+        Duree totale de la scene dans le film — la barre se base la-dessus pour eviter les faux raccords entre les prises.
+      </div>
+      <div class="time-inputs">
+        <input type="number" id="inp-ph" min="0" max="99" value="0" placeholder="HH">
+        <span class="time-sep">:</span>
+        <input type="number" id="inp-pm" min="0" max="59" value="0" placeholder="MM">
+        <span class="time-sep">:</span>
+        <input type="number" id="inp-ps" min="0" max="59" value="0" placeholder="SS">
+      </div>
+      <div style="text-align:center; margin-bottom:0.6rem;">
+        <span id="progress-info" style="font-size:0.75rem; color:#666;">Non definie — la barre suit le decompte</span>
+      </div>
+      <button class="btn btn-set" id="btn-set-progress">&#9881; DEFINIR LA DUREE BARRE</button>
+    </div>
+
     <!-- ─── [3] CONTROLES ─── -->
     <div class="section">
       <div class="section-title">Controles</div>
@@ -236,6 +255,11 @@
     const btnStart = document.getElementById('btn-start');
     const btnReset = document.getElementById('btn-reset');
     const logEl = document.getElementById('log');
+    const inpPH = document.getElementById('inp-ph');
+    const inpPM = document.getElementById('inp-pm');
+    const inpPS = document.getElementById('inp-ps');
+    const btnSetProgress = document.getElementById('btn-set-progress');
+    const progressInfo = document.getElementById('progress-info');
 
     // ─── Formatage HH:MM:SS ───
     function formatTime(totalSeconds) {
@@ -293,6 +317,15 @@
       // Activation du bouton Lancer
       btnStart.disabled = state.status !== 'set';
 
+      // Affichage durée barre
+      if (state.progressDuration > 0) {
+        progressInfo.textContent = 'Duree scene : ' + formatTime(state.progressDuration);
+        progressInfo.style.color = '#FFFF00';
+      } else {
+        progressInfo.textContent = 'Non definie — la barre suit le decompte';
+        progressInfo.style.color = '#666';
+      }
+
       // Log automatique lors des transitions
       if (lastStatus !== state.status) {
         switch (state.status) {
@@ -324,6 +357,8 @@
     }
     clamp(inpM, 59);
     clamp(inpS, 59);
+    clamp(inpPM, 59);
+    clamp(inpPS, 59);
 
     // ─── Calcul de la durée totale en secondes ───
     function getDuration() {
@@ -367,6 +402,16 @@
       const duration = getDuration();
       if (duration <= 0) return;
       socket.emit('set', duration);
+    });
+
+    // ─── Bouton : Définir la durée barre ───
+    btnSetProgress.addEventListener('click', () => {
+      const h = parseInt(inpPH.value, 10) || 0;
+      const m = parseInt(inpPM.value, 10) || 0;
+      const s = parseInt(inpPS.value, 10) || 0;
+      const dur = h * 3600 + m * 60 + s;
+      if (dur <= 0) return;
+      socket.emit('setProgress', dur);
     });
 
     // ─── Bouton : Lancer le décompte ───

@@ -22,10 +22,11 @@ app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'public', 'adm
 
 // ─── État du timer en mémoire ───
 let timerState = {
-  status: 'idle',    // 'idle' | 'set' | 'running' | 'finished'
-  duration: 0,       // secondes totales définies
-  startedAt: null,   // timestamp ms du lancement
-  remaining: 0       // secondes restantes
+  status: 'idle',         // 'idle' | 'set' | 'running' | 'finished'
+  duration: 0,            // secondes totales du décompte
+  progressDuration: 0,    // secondes totales pour la barre (durée scène)
+  startedAt: null,        // timestamp ms du lancement
+  remaining: 0            // secondes restantes
 };
 
 let tickInterval = null;
@@ -85,10 +86,20 @@ io.on('connection', (socket) => {
     timerState = {
       status: 'set',
       duration: dur,
+      progressDuration: timerState.progressDuration, // on garde la durée barre
       startedAt: null,
       remaining: dur
     };
     console.log(`[TIMER] Temps réglé : ${dur}s`);
+    broadcast();
+  });
+
+  // ── Définir la durée de la barre de progression ──
+  socket.on('setProgress', (duration) => {
+    const dur = parseInt(duration, 10);
+    if (!dur || dur <= 0) return;
+    timerState.progressDuration = dur;
+    console.log(`[TIMER] Durée barre réglée : ${dur}s`);
     broadcast();
   });
 
@@ -108,6 +119,7 @@ io.on('connection', (socket) => {
     timerState = {
       status: 'idle',
       duration: 0,
+      progressDuration: timerState.progressDuration, // on garde la durée barre
       startedAt: null,
       remaining: 0
     };
