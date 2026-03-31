@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ADMIN — Régie Timer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <style>
+    /* ─── RESET & BASE ─── */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%; min-height: 100vh;
+      background: #0D0D0D;
+      font-family: 'Share Tech Mono', 'Courier New', monospace;
+      color: #ccc;
+    }
+
+    /* ─── LAYOUT ─── */
+    .wrapper {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 1.5rem 1rem 3rem;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 1.2rem;
+      color: #FF0000;
+      letter-spacing: 0.3em;
+      border-bottom: 1px solid #333;
+      padding-bottom: 0.8rem;
+      margin-bottom: 1.5rem;
+    }
+
+    /* ─── SECTIONS ─── */
+    .section {
+      background: #111;
+      border: 1px solid #222;
+      border-radius: 6px;
+      padding: 1rem 1.2rem;
+      margin-bottom: 1rem;
+    }
+    .section-title {
+      font-size: 0.75rem;
+      color: #666;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      margin-bottom: 0.8rem;
+    }
+
+    /* ─── STATUT ─── */
+    .status-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .badge {
+      display: inline-block;
+      padding: 0.2em 0.7em;
+      border-radius: 3px;
+      font-size: 0.75rem;
+      letter-spacing: 0.1em;
+    }
+    .badge.connected    { background: #0a2e0a; color: #0f0; border: 1px solid #0f03; }
+    .badge.disconnected { background: #2e0a0a; color: #f00; border: 1px solid #f003; }
+    #status-label {
+      font-size: 1rem;
+      color: #FFFF00;
+      letter-spacing: 0.15em;
+    }
+    #status-remaining {
+      font-size: 1.6rem;
+      color: #FFFF00;
+      text-align: center;
+      margin-top: 0.5rem;
+      text-shadow: 0 0 10px rgba(255,255,0,0.3);
+    }
+
+    /* ─── INPUTS TEMPS ─── */
+    .time-inputs {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      margin-bottom: 0.8rem;
+    }
+    .time-inputs input {
+      width: 80px;
+      background: #000;
+      border: 1px solid #FFFF00;
+      border-radius: 4px;
+      color: #FFFF00;
+      font-family: inherit;
+      font-size: 1.8rem;
+      text-align: center;
+      padding: 0.3rem;
+      outline: none;
+    }
+    .time-inputs input:focus { border-color: #fff; box-shadow: 0 0 8px rgba(255,255,0,0.3); }
+    .time-sep {
+      font-size: 1.8rem;
+      color: #FFFF00;
+    }
+
+    /* ─── PRESETS ─── */
+    .presets {
+      display: flex;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 1rem;
+    }
+    .preset-btn {
+      background: #1a1a1a;
+      border: 1px solid #444;
+      color: #ccc;
+      font-family: inherit;
+      font-size: 0.8rem;
+      padding: 0.4em 0.8em;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .preset-btn:hover { background: #333; border-color: #FFFF00; color: #FFFF00; }
+
+    /* ─── BOUTONS PRINCIPAUX ─── */
+    .btn {
+      display: block;
+      width: 100%;
+      font-family: inherit;
+      font-size: 1rem;
+      letter-spacing: 0.15em;
+      padding: 0.8em;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.15s;
+      margin-bottom: 0.5rem;
+    }
+    .btn:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+    .btn-set {
+      background: #1a1a00;
+      border: 1px solid #FFFF00;
+      color: #FFFF00;
+    }
+    .btn-set:hover:not(:disabled) { background: #333300; }
+    .btn-start {
+      background: #330000;
+      border: 1px solid #FF0000;
+      color: #FF0000;
+      font-size: 1.2rem;
+    }
+    .btn-start:hover:not(:disabled) { background: #550000; box-shadow: 0 0 20px rgba(255,0,0,0.3); }
+    .btn-reset {
+      background: transparent;
+      border: 1px solid #444;
+      color: #666;
+      font-size: 0.85rem;
+    }
+    .btn-reset:hover { border-color: #888; color: #aaa; }
+
+    /* ─── LOG ─── */
+    #log {
+      font-size: 0.7rem;
+      color: #555;
+      line-height: 1.6;
+      max-height: 8em;
+      overflow-y: auto;
+    }
+    #log .entry { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    #log .entry:first-child { color: #888; }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <h1>REGIE TIMER</h1>
+
+    <!-- ─── [1] STATUT EN DIRECT ─── -->
+    <div class="section">
+      <div class="section-title">Statut en direct</div>
+      <div class="status-row">
+        <span id="ws-badge" class="badge disconnected">DECONNECTE</span>
+        <span id="status-label">IDLE</span>
+      </div>
+      <div id="status-remaining">--:--:--</div>
+    </div>
+
+    <!-- ─── [2] REGLAGE DU TEMPS ─── -->
+    <div class="section">
+      <div class="section-title">Reglage du temps</div>
+      <div class="time-inputs">
+        <input type="number" id="inp-h" min="0" max="99" value="0" placeholder="HH">
+        <span class="time-sep">:</span>
+        <input type="number" id="inp-m" min="0" max="59" value="5" placeholder="MM">
+        <span class="time-sep">:</span>
+        <input type="number" id="inp-s" min="0" max="59" value="0" placeholder="SS">
+      </div>
+      <div class="presets">
+        <button class="preset-btn" data-sec="60">1 MIN</button>
+        <button class="preset-btn" data-sec="120">2 MIN</button>
+        <button class="preset-btn" data-sec="300">5 MIN</button>
+        <button class="preset-btn" data-sec="600">10 MIN</button>
+        <button class="preset-btn" data-sec="1800">30 MIN</button>
+      </div>
+      <button class="btn btn-set" id="btn-set">&#9881; DEFINIR LE TEMPS</button>
+    </div>
+
+    <!-- ─── [3] CONTROLES ─── -->
+    <div class="section">
+      <div class="section-title">Controles</div>
+      <button class="btn btn-start" id="btn-start" disabled>&#9654; LANCER LE DECOMPTE</button>
+      <button class="btn btn-reset" id="btn-reset">&#8634; REINITIALISER</button>
+    </div>
+
+    <!-- ─── [4] LOG ─── -->
+    <div class="section">
+      <div class="section-title">Historique</div>
+      <div id="log"></div>
+    </div>
+  </div>
+
+  <script>
+    // ─── Éléments DOM ───
+    const wsBadge = document.getElementById('ws-badge');
+    const statusLabel = document.getElementById('status-label');
+    const statusRemaining = document.getElementById('status-remaining');
+    const inpH = document.getElementById('inp-h');
+    const inpM = document.getElementById('inp-m');
+    const inpS = document.getElementById('inp-s');
+    const btnSet = document.getElementById('btn-set');
+    const btnStart = document.getElementById('btn-start');
+    const btnReset = document.getElementById('btn-reset');
+    const logEl = document.getElementById('log');
+
+    // ─── Formatage HH:MM:SS ───
+    function formatTime(totalSeconds) {
+      const h = Math.floor(totalSeconds / 3600);
+      const m = Math.floor((totalSeconds % 3600) / 60);
+      const s = totalSeconds % 60;
+      return [h, m, s].map(v => String(v).padStart(2, '0')).join(':');
+    }
+
+    // ─── Timestamp pour le log ───
+    function ts() {
+      const d = new Date();
+      return '[' + [d.getHours(), d.getMinutes(), d.getSeconds()]
+        .map(v => String(v).padStart(2, '0')).join(':') + ']';
+    }
+
+    // ─── Ajout au log (max 5 entrées) ───
+    const logEntries = [];
+    function addLog(text) {
+      logEntries.unshift(ts() + ' ' + text);
+      if (logEntries.length > 5) logEntries.pop();
+      logEl.innerHTML = logEntries
+        .map(e => `<div class="entry">${e}</div>`)
+        .join('');
+    }
+
+    // ─── Labels de statut ───
+    const STATUS_LABELS = {
+      idle: 'IDLE',
+      set: 'REGLE',
+      running: 'EN COURS',
+      finished: 'TERMINE'
+    };
+
+    // ─── Mise à jour de l'interface selon l'état reçu ───
+    let lastStatus = null;
+    function updateUI(state) {
+      // Statut textuel
+      statusLabel.textContent = STATUS_LABELS[state.status] || state.status;
+
+      // Temps restant
+      statusRemaining.textContent = state.status === 'idle'
+        ? '--:--:--'
+        : formatTime(state.remaining);
+
+      // Couleur du temps restant
+      if (state.status === 'finished') {
+        statusRemaining.style.color = '#FF0000';
+      } else if (state.status === 'running' && state.remaining <= 10) {
+        statusRemaining.style.color = '#FF6600';
+      } else {
+        statusRemaining.style.color = '#FFFF00';
+      }
+
+      // Activation du bouton Lancer
+      btnStart.disabled = state.status !== 'set';
+
+      // Log automatique lors des transitions
+      if (lastStatus !== state.status) {
+        switch (state.status) {
+          case 'set':
+            addLog('Temps regle : ' + formatTime(state.remaining));
+            break;
+          case 'running':
+            addLog('Decompte lance');
+            break;
+          case 'finished':
+            addLog('TEMPS ECOULE');
+            break;
+          case 'idle':
+            if (lastStatus !== null) addLog('Reinitialise');
+            break;
+        }
+        lastStatus = state.status;
+      }
+    }
+
+    // ─── Validation : clamp MM et SS entre 0-59 ───
+    function clamp(input, max) {
+      input.addEventListener('change', () => {
+        let v = parseInt(input.value, 10) || 0;
+        if (v < 0) v = 0;
+        if (v > max) v = max;
+        input.value = v;
+      });
+    }
+    clamp(inpM, 59);
+    clamp(inpS, 59);
+
+    // ─── Calcul de la durée totale en secondes ───
+    function getDuration() {
+      const h = parseInt(inpH.value, 10) || 0;
+      const m = parseInt(inpM.value, 10) || 0;
+      const s = parseInt(inpS.value, 10) || 0;
+      return h * 3600 + m * 60 + s;
+    }
+
+    // ─── Remplir les inputs depuis une durée en secondes ───
+    function setInputsFromSeconds(sec) {
+      inpH.value = Math.floor(sec / 3600);
+      inpM.value = Math.floor((sec % 3600) / 60);
+      inpS.value = sec % 60;
+    }
+
+    // ─── Presets rapides ───
+    document.querySelectorAll('.preset-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        setInputsFromSeconds(parseInt(btn.dataset.sec, 10));
+      });
+    });
+
+    // ─── Envoi de messages au serveur ───
+    function send(obj) {
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify(obj));
+      }
+    }
+
+    // ─── Bouton : Définir le temps ───
+    btnSet.addEventListener('click', () => {
+      const duration = getDuration();
+      if (duration <= 0) return;
+      send({ action: 'set', duration });
+    });
+
+    // ─── Bouton : Lancer le décompte ───
+    btnStart.addEventListener('click', () => {
+      send({ action: 'start' });
+    });
+
+    // ─── Bouton : Réinitialiser ───
+    btnReset.addEventListener('click', () => {
+      send({ action: 'reset' });
+    });
+
+    // ─── Connexion WebSocket avec reconnexion automatique ───
+    let ws;
+    function connect() {
+      const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+      ws = new WebSocket(`${protocol}//${location.host}`);
+
+      ws.onopen = () => {
+        wsBadge.textContent = 'CONNECTE';
+        wsBadge.className = 'badge connected';
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const state = JSON.parse(event.data);
+          updateUI(state);
+        } catch (e) {
+          console.error('[WS] Message invalide', e);
+        }
+      };
+
+      ws.onclose = () => {
+        wsBadge.textContent = 'DECONNECTE';
+        wsBadge.className = 'badge disconnected';
+        setTimeout(connect, 3000);
+      };
+
+      ws.onerror = () => {
+        ws.close();
+      };
+    }
+
+    // Lancement
+    connect();
+  </script>
+</body>
+</html>

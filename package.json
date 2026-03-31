@@ -1,0 +1,13 @@
+{
+  "name": "timer-thriller",
+  "version": "1.0.0",
+  "description": "Timer scénique thriller/horreur avec WebSocket",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.0",
+    "ws": "^8.0.0"
+  }
+}

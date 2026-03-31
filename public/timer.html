@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>TIMER</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <style>
+    /* ─── RESET & BASE ─── */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%; height: 100%;
+      overflow: hidden;
+      background: #000;
+      font-family: 'Share Tech Mono', 'Courier New', monospace;
+      color: #FFFF00;
+    }
+
+    /* ─── CONTENEUR PRINCIPAL ─── */
+    .container {
+      position: relative;
+      width: 100vw; height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* ─── SCANLINES ─── */
+    .scanlines {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 100;
+      background: repeating-linear-gradient(
+        0deg,
+        rgba(0,0,0,0.15) 0px,
+        rgba(0,0,0,0.15) 1px,
+        transparent 1px,
+        transparent 3px
+      );
+    }
+
+    /* ─── VIGNETTE ─── */
+    .vignette {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 99;
+      background: radial-gradient(
+        ellipse at center,
+        transparent 50%,
+        rgba(0,0,0,0.7) 100%
+      );
+    }
+
+    /* ─── COINS DÉCORATIFS « CIBLE MILITAIRE » ─── */
+    .corner {
+      position: absolute;
+      width: 40px; height: 40px;
+      border-color: rgba(255,255,0,0.4);
+      border-style: solid;
+      z-index: 10;
+    }
+    .corner.tl { top: 12%; left: 5%;  border-width: 3px 0 0 3px; }
+    .corner.tr { top: 12%; right: 5%; border-width: 3px 3px 0 0; }
+    .corner.bl { bottom: 18%; left: 5%;  border-width: 0 0 3px 3px; }
+    .corner.br { bottom: 18%; right: 5%; border-width: 0 3px 3px 0; }
+    /* Petite croix centrale en haut */
+    .crosshair {
+      position: absolute;
+      top: 8%; left: 50%;
+      transform: translateX(-50%);
+      font-size: 1.2rem;
+      color: rgba(255,255,0,0.25);
+      z-index: 10;
+      letter-spacing: 0.3em;
+    }
+
+    /* ─── TIMER ─── */
+    #timer {
+      font-size: clamp(4rem, 20vw, 20rem);
+      font-weight: 400;
+      letter-spacing: 0.05em;
+      line-height: 1;
+      text-align: center;
+      z-index: 10;
+      /* Aberration chromatique par défaut */
+      text-shadow:
+        -2px 0 1px rgba(255,0,0,0.5),
+        2px 0 1px rgba(0,255,255,0.5),
+        0 0 20px rgba(255,255,0,0.3);
+      transition: color 0.3s;
+    }
+
+    /* ─── SOUS-TEXTE ─── */
+    #subtitle {
+      font-size: clamp(0.8rem, 2.5vw, 1.8rem);
+      letter-spacing: 0.4em;
+      margin-top: 1rem;
+      z-index: 10;
+      opacity: 0.8;
+    }
+
+    /* ─── BARRE DE PROGRESSION ─── */
+    .progress-container {
+      position: absolute;
+      bottom: 4%;
+      left: 5%; right: 5%;
+      height: 6px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 3px;
+      z-index: 10;
+      overflow: hidden;
+    }
+    #progress-bar {
+      height: 100%;
+      width: 100%;
+      background: #FFFF00;
+      border-radius: 3px;
+      transition: width 0.9s linear, background-color 0.5s;
+    }
+
+    /* ─── OVERLAY IDLE ─── */
+    #overlay-idle {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+      font-size: clamp(3rem, 10vw, 8rem);
+      color: rgba(255,255,0,0.3);
+    }
+    #overlay-idle.hidden { display: none; }
+
+    /* ─── ANIMATION : pulse (EN ATTENTE) ─── */
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+    .pulse { animation: pulse 2s ease-in-out infinite; }
+
+    /* ─── ANIMATION : shake léger (10-30s) ─── */
+    @keyframes shake-light {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-2px); }
+      40% { transform: translateX(2px); }
+      60% { transform: translateX(-1px); }
+      80% { transform: translateX(1px); }
+    }
+    .shake-light { animation: shake-light 0.4s infinite; }
+
+    /* ─── ANIMATION : shake fort (<10s) ─── */
+    @keyframes shake-hard {
+      0%, 100% { transform: translateX(0); }
+      10% { transform: translateX(-4px) skewX(-1deg); }
+      30% { transform: translateX(4px) skewX(1deg); }
+      50% { transform: translateX(-3px); }
+      70% { transform: translateX(3px); }
+      90% { transform: translateX(-2px); }
+    }
+    .shake-hard { animation: shake-hard 0.2s infinite; }
+
+    /* ─── ANIMATION : flash du fond (<10s) ─── */
+    @keyframes flash-bg {
+      0%, 100% { background-color: #000; }
+      50% { background-color: #1a0000; }
+    }
+    .flash-bg { animation: flash-bg 0.5s infinite; }
+
+    /* ─── ANIMATION : blink terminé ─── */
+    @keyframes blink {
+      0%, 49% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    .blink { animation: blink 0.4s infinite; }
+
+    /* ─── ANIMATION : fond qui pulse rouge ─── */
+    @keyframes pulse-red-bg {
+      0%, 100% { background-color: #000; }
+      50% { background-color: #220000; }
+    }
+    .pulse-red-bg { animation: pulse-red-bg 1.2s ease-in-out infinite; }
+
+    /* ─── ANIMATION : glitch terminé ─── */
+    @keyframes glitch {
+      0%, 100% {
+        text-shadow:
+          -2px 0 #FF0000,
+          2px 0 #0FF,
+          0 0 30px rgba(255,0,0,0.6);
+        transform: translateX(0);
+      }
+      20% {
+        text-shadow:
+          -5px 0 #FF0000,
+          5px 0 #0FF,
+          0 0 40px rgba(255,0,0,0.8);
+        transform: translateX(-3px);
+      }
+      40% {
+        text-shadow:
+          3px 0 #FF0000,
+          -3px 0 #0FF;
+        transform: translateX(3px);
+      }
+      60% {
+        text-shadow:
+          -4px 0 #FF0000,
+          4px 0 #0FF,
+          0 0 50px rgba(255,0,0,1);
+        transform: translateX(-2px);
+      }
+      80% {
+        text-shadow:
+          2px 0 #FF0000,
+          -2px 0 #0FF;
+        transform: translateX(2px);
+      }
+    }
+    .glitch { animation: glitch 0.3s infinite; }
+
+    /* ─── DOTS ANIMÉS (IDLE) ─── */
+    @keyframes dots {
+      0%   { content: '.'; }
+      33%  { content: '..'; }
+      66%  { content: '...'; }
+    }
+    .dots::after {
+      content: '...';
+      animation: dots 2s steps(3, end) infinite;
+    }
+  </style>
+</head>
+<body>
+  <!-- Effets visuels -->
+  <div class="scanlines"></div>
+  <div class="vignette"></div>
+
+  <!-- Overlay quand idle -->
+  <div id="overlay-idle">
+    <span class="dots"></span>
+  </div>
+
+  <!-- Conteneur principal -->
+  <div class="container" id="main-container">
+    <!-- Coins décoratifs -->
+    <div class="corner tl"></div>
+    <div class="corner tr"></div>
+    <div class="corner bl"></div>
+    <div class="corner br"></div>
+    <div class="crosshair">+ + +</div>
+
+    <!-- Timer -->
+    <div id="timer">00:00:00</div>
+    <div id="subtitle"></div>
+
+    <!-- Barre de progression -->
+    <div class="progress-container">
+      <div id="progress-bar"></div>
+    </div>
+  </div>
+
+  <script>
+    // ─── Éléments DOM ───
+    const timerEl = document.getElementById('timer');
+    const subtitleEl = document.getElementById('subtitle');
+    const overlayEl = document.getElementById('overlay-idle');
+    const containerEl = document.getElementById('main-container');
+    const progressBar = document.getElementById('progress-bar');
+
+    // ─── Formatage HH:MM:SS ───
+    function formatTime(totalSeconds) {
+      const h = Math.floor(totalSeconds / 3600);
+      const m = Math.floor((totalSeconds % 3600) / 60);
+      const s = totalSeconds % 60;
+      return [h, m, s].map(v => String(v).padStart(2, '0')).join(':');
+    }
+
+    // ─── Mise à jour de l'affichage selon l'état ───
+    function updateDisplay(state) {
+      // Nettoyage des classes d'animation
+      timerEl.className = '';
+      subtitleEl.className = '';
+      containerEl.className = 'container';
+
+      switch (state.status) {
+        // ── IDLE : overlay noir ──
+        case 'idle':
+          overlayEl.classList.remove('hidden');
+          timerEl.textContent = '00:00:00';
+          subtitleEl.textContent = '';
+          progressBar.style.width = '0%';
+          progressBar.style.backgroundColor = '#FFFF00';
+          timerEl.style.color = '#FFFF00';
+          break;
+
+        // ── SET : temps affiché, en attente ──
+        case 'set':
+          overlayEl.classList.add('hidden');
+          timerEl.textContent = formatTime(state.remaining);
+          timerEl.style.color = '#FFFF00';
+          timerEl.style.textShadow = '-2px 0 1px rgba(255,0,0,0.5), 2px 0 1px rgba(0,255,255,0.5), 0 0 20px rgba(255,255,0,0.3)';
+          subtitleEl.textContent = 'EN ATTENTE';
+          subtitleEl.classList.add('pulse');
+          subtitleEl.style.color = '#FFFF00';
+          progressBar.style.width = '100%';
+          progressBar.style.backgroundColor = '#FFFF00';
+          break;
+
+        // ── RUNNING : décompte actif ──
+        case 'running': {
+          overlayEl.classList.add('hidden');
+          timerEl.textContent = formatTime(state.remaining);
+          subtitleEl.textContent = '';
+
+          const r = state.remaining;
+          const pct = state.duration > 0 ? (r / state.duration) * 100 : 0;
+          progressBar.style.width = pct + '%';
+
+          if (r > 30) {
+            // Zone normale — jaune
+            timerEl.style.color = '#FFFF00';
+            timerEl.style.textShadow = '-2px 0 1px rgba(255,0,0,0.5), 2px 0 1px rgba(0,255,255,0.5), 0 0 20px rgba(255,255,0,0.3)';
+            progressBar.style.backgroundColor = '#FFFF00';
+          } else if (r > 10) {
+            // Zone tension — jaune + shake léger
+            timerEl.style.color = '#FFFF00';
+            timerEl.style.textShadow = '-2px 0 1px rgba(255,0,0,0.6), 2px 0 1px rgba(0,255,255,0.6), 0 0 30px rgba(255,255,0,0.5)';
+            timerEl.classList.add('shake-light');
+            progressBar.style.backgroundColor = '#FFaa00';
+          } else {
+            // Zone critique — orange + shake fort + flash fond
+            timerEl.style.color = '#FF6600';
+            timerEl.style.textShadow = '-3px 0 2px rgba(255,0,0,0.8), 3px 0 2px rgba(0,255,255,0.6), 0 0 40px rgba(255,100,0,0.6)';
+            timerEl.classList.add('shake-hard');
+            containerEl.classList.add('flash-bg');
+            progressBar.style.backgroundColor = '#FF6600';
+          }
+          break;
+        }
+
+        // ── FINISHED : temps écoulé, effets maximum ──
+        case 'finished':
+          overlayEl.classList.add('hidden');
+          timerEl.textContent = '00:00:00';
+          timerEl.style.color = '#FF0000';
+          timerEl.classList.add('glitch');
+          containerEl.classList.add('pulse-red-bg');
+          subtitleEl.textContent = 'TEMPS ÉCOULÉ';
+          subtitleEl.classList.add('blink');
+          subtitleEl.style.color = '#FF0000';
+          progressBar.style.width = '0%';
+          progressBar.style.backgroundColor = '#FF0000';
+          break;
+      }
+    }
+
+    // ─── Connexion WebSocket avec reconnexion automatique ───
+    let ws;
+    function connect() {
+      const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+      ws = new WebSocket(`${protocol}//${location.host}`);
+
+      ws.onopen = () => {
+        console.log('[WS] Connecté');
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const state = JSON.parse(event.data);
+          updateDisplay(state);
+        } catch (e) {
+          console.error('[WS] Message invalide', e);
+        }
+      };
+
+      ws.onclose = () => {
+        console.log('[WS] Déconnecté — reconnexion dans 3s...');
+        setTimeout(connect, 3000);
+      };
+
+      ws.onerror = () => {
+        ws.close();
+      };
+    }
+
+    // Lancement
+    connect();
+  </script>
+</body>
+</html>
