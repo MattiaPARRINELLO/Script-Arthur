@@ -295,6 +295,7 @@
     </div>
   </div>
 
+  <script src="/socket.io/socket.io.js"></script>
   <script>
     // ─── Éléments DOM ───
     const timerEl = document.getElementById('timer');
@@ -406,22 +407,9 @@
       }
     });
 
-    // ─── Polling HTTP toutes les secondes ───
-    async function poll() {
-      try {
-        const res = await fetch('/api/state');
-        if (res.ok) {
-          const state = await res.json();
-          updateDisplay(state);
-        }
-      } catch (e) {
-        // Serveur injoignable, on réessaie au prochain tick
-      }
-    }
-
-    // Premier appel immédiat puis toutes les secondes
-    poll();
-    setInterval(poll, 1000);
+    // ─── Connexion Socket.IO (reconnexion automatique intégrée) ───
+    const socket = io();
+    socket.on('state', (state) => updateDisplay(state));
   </script>
 </body>
 </html>
