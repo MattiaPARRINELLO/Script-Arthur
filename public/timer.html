@@ -312,8 +312,15 @@
       return [h, m, s].map(v => String(v).padStart(2, '0')).join(':');
     }
 
+    let finishedBlinkTimer = null;
+
     // ─── Mise à jour de l'affichage selon l'état ───
     function updateDisplay(state) {
+      if (finishedBlinkTimer) {
+        clearTimeout(finishedBlinkTimer);
+        finishedBlinkTimer = null;
+      }
+
       // Nettoyage des classes d'animation
       timerEl.className = '';
       subtitleEl.className = '';
@@ -377,10 +384,12 @@
           break;
         }
 
-        // ── FINISHED : temps écoulé, effets maximum ──
+        // ── FINISHED : clignote 5s puis passe en jaune fixe ──
         case 'finished':
           overlayEl.classList.add('hidden');
           timerEl.textContent = '00:00:00';
+
+          // Phase clignotante (5s)
           timerEl.style.color = '#FF0000';
           timerEl.classList.add('glitch');
           containerEl.classList.add('pulse-red-bg');
@@ -389,6 +398,19 @@
           subtitleEl.style.color = '#FF0000';
           progressBar.style.width = '0%';
           progressBar.style.backgroundColor = '#FF0000';
+
+          // Après 5s → jaune fixe
+          finishedBlinkTimer = setTimeout(() => {
+            timerEl.className = '';
+            timerEl.style.color = '#FFFF00';
+            timerEl.style.textShadow = '-2px 0 1px rgba(255,0,0,0.5), 2px 0 1px rgba(0,255,255,0.5), 0 0 20px rgba(255,255,0,0.3)';
+            containerEl.className = 'container';
+            subtitleEl.className = '';
+            subtitleEl.style.color = '#FFFF00';
+            subtitleEl.textContent = 'TEMPS ÉCOULÉ';
+            progressBar.style.backgroundColor = '#FFFF00';
+            finishedBlinkTimer = null;
+          }, 5000);
           break;
       }
     }
